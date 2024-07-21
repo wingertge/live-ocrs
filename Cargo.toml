@@ -1,0 +1,30 @@
+[package]
+edition = "2021"
+name = "live-ocrs"
+version = "0.1.0"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bitcode = "0.6"
+device_query = "2"
+geo = "0.28"
+geo-clipper = "0.8"
+iced = { version = "0.12", features = ["tokio"] }
+iced_winit = "0.12"
+image = "0.25"
+imageproc = "0.25"
+itertools = "0.13"
+log = "0.4"
+ordered-float = "4.2"
+rapidocr = { path = "../rapidoc-rs" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1.38", features = ["time", "rt", "sync"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+trie-rs = "0.4"
+type_hash = "0.3"
+unicode-blocks = "0.1"
+winit = "0.30"
+xcap = "0.0.10"

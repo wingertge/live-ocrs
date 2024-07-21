@@ -1,0 +1,8 @@
+/target
+/models
+/lib
+/tessdata
+/part_images
+*.png
+/data/cache
+/.cargo
