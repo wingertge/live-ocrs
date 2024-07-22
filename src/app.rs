@@ -1,6 +1,6 @@
 use std::{any::TypeId, sync::Arc};
 
-use device_query::{DeviceEvents as _, DeviceQuery, DeviceState, Keycode};
+use device_query::{DeviceEvents as _, DeviceQuery, DeviceState, Keycode, MouseState};
 use iced::{
     futures::SinkExt,
     subscription, theme,
@@ -48,7 +48,7 @@ fn pinyin_color(tone: Tone) -> Color {
 fn view_pinyin(pinyin: &[Pinyin]) -> Element<OcrMessage> {
     let elements = pinyin.iter().map(|it| {
         text(it.syllable.to_owned())
-            .size(20)
+            .size(16)
             .style(theme::Text::Color(pinyin_color(it.tone)))
             .into()
     });
@@ -58,7 +58,7 @@ fn view_pinyin(pinyin: &[Pinyin]) -> Element<OcrMessage> {
 impl LiveOcr {
     fn view_definitions(&self) -> Vec<Element<OcrMessage>> {
         let definition_text = self.definitions.iter().flat_map(|definition| {
-            let header = text(definition.simplified.to_owned()).size(24);
+            let header = text(definition.simplified.to_owned()).size(20);
             let pinyin = view_pinyin(&definition.pinyin);
             let body = definition
                 .translations
@@ -67,8 +67,14 @@ impl LiveOcr {
             vec![header.into(), pinyin].into_iter().chain(body)
         });
         vec![
-            text("Definitions: ").size(24).into(),
-            text("").size(24).into(),
+            text(if self.enabled {
+                "Definitions: "
+            } else {
+                "Disabled"
+            })
+            .size(24)
+            .into(),
+            text("").size(16).into(),
         ]
         .into_iter()
         .chain(definition_text)
@@ -96,7 +102,9 @@ impl Application for LiveOcr {
             .chain(vec![Text::new("Hovering: ").size(24).into()])
             .chain(hovering)
             .chain(self.view_definitions()); */
-        Column::with_children(self.view_definitions()).into()
+        Column::with_children(self.view_definitions())
+            .padding(32)
+            .into()
     }
 
     fn update(&mut self, message: OcrMessage) -> Command<OcrMessage> {
@@ -110,11 +118,18 @@ impl Application for LiveOcr {
                 self.enabled = !self.enabled;
                 if self.enabled {
                     self.ocr_strings.clear();
-                    Command::perform(self.capture_state.clone().capture(), |ocr_state| {
+                    let device_state = DeviceState::new();
+                    let MouseState {
+                        coords: (cursor_x, cursor_y),
+                        ..
+                    } = device_state.get_mouse();
+                    let monitor = Monitor::from_point(cursor_x, cursor_y).unwrap();
+                    Command::perform(self.capture_state.clone().capture(monitor), |ocr_state| {
                         OcrMessage::OcrChanged(ocr_state)
                     })
                 } else {
                     self.hovering = None;
+                    self.definitions = Vec::new();
                     Command::none()
                 }
             }
@@ -144,11 +159,18 @@ impl Application for LiveOcr {
 
     fn new(_flags: ()) -> (Self, Command<OcrMessage>) {
         let ocr = RapidOCRBuilder::new().build().unwrap();
-        let monitor = Monitor::all().unwrap().first().unwrap().to_owned();
-
+        /*         let image = image::open("Screenshot_5.png").unwrap();
+               image.to_luma8().save("screen_gray.png").unwrap();
+               let boxes = do_ocr(&ocr, &image);
+               let mut image = image.to_rgb8();
+               for (_, contour) in boxes.iter().flat_map(|it| &it.1) {
+                   draw_outline_geo(&mut image, *contour, Rgb([255, 0, 0]))
+               }
+               image.save("boundaries.png").unwrap();
+        */
         (
             Self {
-                capture_state: Arc::new(CaptureState { ocr, monitor }),
+                capture_state: Arc::new(CaptureState { ocr }),
                 ocr_strings: Vec::new(),
                 enabled: false,
                 hovering: None,
@@ -165,6 +187,10 @@ impl Application for LiveOcr {
 
     fn title(&self) -> String {
         "OCR".into()
+    }
+
+    fn theme(&self) -> Self::Theme {
+        Theme::GruvboxDark
     }
 
     type Executor = iced::executor::Default;
