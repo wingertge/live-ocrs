@@ -1,11 +1,15 @@
 use geo::{coord, BoundingRect, Rect, Scale, Translate};
 use geo_clipper::{Clipper, EndType, JoinType};
 use image::DynamicImage;
+#[cfg(feature = "debug")]
+use image::Rgb;
 use imageproc::contours::{find_contours_with_threshold, BorderType};
 use ordered_float::OrderedFloat;
 use rapidocr::OcrResult;
 use unicode_blocks::is_cjk;
 
+#[cfg(feature = "debug")]
+use crate::draw_outline_geo;
 use crate::to_geo_poly;
 
 pub type Character = (usize, Rect<f32>);
@@ -54,7 +58,14 @@ pub fn detect_char_boxes(image: &DynamicImage, detection_results: &[OcrResult]) 
                     poly.bounding_rect()
                 })
                 .collect::<Vec<_>>();
-
+#[cfg(feature = "debug")]
+            {
+                let mut image = DynamicImage::ImageLuma8(gray_image).to_rgb8();
+                for contour in bounds.iter() {
+                    draw_outline_geo(&mut image, *contour, Rgb([255, 0, 0]))
+                }
+                image.save(format!("part_images/subimage{i}.png")).unwrap();
+            }
             if bounds.len() < 2 {
                 log::info!("bounds too small");
                 return None;
