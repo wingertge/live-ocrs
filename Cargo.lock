@@ -2899,6 +2899,7 @@ dependencies = [
  "rapidocr",
  "serde",
  "serde_json",
+ "serde_repr",
  "tokio",
  "tracing",
  "tracing-subscriber",

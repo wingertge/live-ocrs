@@ -130,7 +130,7 @@ impl Application for LiveOcr {
             OcrMessage::CursorMoved(position) => {
                 if self.enabled && !self.definitions.ocr_strings.is_empty() {
                     let point = geo::point!(x: position.x, y: position.y);
-                    let (closest_string, closest_char, closest_distance) =
+                    let (closest_string, closest_char, closest_distance, _) =
                         find_closest_char(&self.definitions.ocr_strings, point);
                     if closest_distance < 5.0 {
                         if let Some((prev_str, prev_char)) = &self.hovering {
@@ -169,7 +169,7 @@ impl Application for LiveOcr {
                 capture_state: Arc::new(CaptureState { ocr }),
                 enabled: false,
                 hovering: None,
-                definitions: Definitions::new(dict::load(dict_path)),
+                definitions: Definitions::new(dict::load(dict_path, ".cache")),
                 monitor: None,
                 tooltip_window: None,
             },

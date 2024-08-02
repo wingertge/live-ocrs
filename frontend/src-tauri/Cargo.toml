@@ -21,7 +21,7 @@ tauri = { version = "1.7.0", features = ["global-shortcut-all"] }
 log = "0.4"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 live-ocrs = { path = "../.." }
-rapidocr = { path = "../../../rapidoc-rs", features = ["tensorrt"] }
+rapidocr = { path = "../../../rapidoc-rs", features = ["tensorrt", "directml"] }
 device_query = "2"
 parking_lot = "0.12"
 
@@ -30,7 +30,3 @@ parking_lot = "0.12"
 # If you use cargo directly instead of tauri's cli you can use this feature flag to switch between tauri's `dev` and `build` modes.
 # DO NOT REMOVE!!
 custom-protocol = [ "tauri/custom-protocol" ]
-
-
-[profile.dev.package."*"]
-opt-level = 3

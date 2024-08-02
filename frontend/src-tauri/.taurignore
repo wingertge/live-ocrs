@@ -1,2 +1,3 @@
 **/*.png
 **/part_images
+**/src/*.tsx

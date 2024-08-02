@@ -35,7 +35,7 @@ pub fn detect_char_boxes(image: &DynamicImage, detection_results: &[OcrResult]) 
             let text_len = text.chars().count();
             let removed = line.text.text.chars().count() - text_len;
             log::debug!("{} is CJK: {}", text, text.trim().chars().all(is_cjk));
-            if text_len == 1 {
+            if text_len <= 1 {
                 return Some((
                     text,
                     vec![(0usize, line.bounds.rect.bounding_rect().unwrap())],

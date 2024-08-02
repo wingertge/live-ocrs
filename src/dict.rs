@@ -3,6 +3,7 @@ use std::path::Path;
 use bitcode::{Decode, Encode};
 use itertools::Itertools;
 use serde::{Deserialize, Deserializer, Serialize};
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use trie_rs::map::Trie;
 use type_hash::TypeHash;
 
@@ -23,14 +24,15 @@ pub struct Pinyin {
     pub syllable: String,
 }
 
-#[derive(Serialize, Deserialize, Encode, Decode, Clone, Debug, TypeHash, Copy)]
+#[derive(Serialize_repr, Deserialize_repr, Encode, Decode, Clone, Debug, TypeHash, Copy)]
+#[repr(u8)]
 pub enum Tone {
-    First,
-    Second,
-    Third,
-    Fourth,
-    Fifth,
-    None,
+    First = 1,
+    Second = 2,
+    Third = 3,
+    Fourth = 4,
+    Fifth = 5,
+    None = 0,
 }
 
 impl Tone {
@@ -107,11 +109,11 @@ impl Dictionary {
     }
 }
 
-pub fn load(path: impl AsRef<Path>) -> Dictionary {
+pub fn load(path: impl AsRef<Path>, cache_dir: impl AsRef<Path>) -> Dictionary {
     log::info!("Loading data");
     let path = path.as_ref();
+    let cache_dir = cache_dir.as_ref();
 
-    let cache_dir = path.parent().unwrap().join("cache");
     if !cache_dir.exists() {
         std::fs::create_dir_all(&cache_dir).unwrap();
     }

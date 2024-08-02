@@ -57,19 +57,26 @@ pub fn longest_meaningful_string(text: &str, from: usize) -> String {
         .collect()
 }
 
-pub fn find_closest_char(ocr_strings: &[Block], cursor: geo::Point<f32>) -> (String, usize, f32) {
+pub fn find_closest_char(
+    ocr_strings: &[Block],
+    cursor: geo::Point<f32>,
+) -> (String, usize, f32, Rect<f32>) {
     ocr_strings
         .iter()
         .map(|(text, chars)| {
-            let (closest_char, closest_distance) = chars
+            let (closest_char, closest_distance, closest_rect) = chars
                 .iter()
-                .map(|(ch, rect)| (*ch, OrderedFloat(rect.euclidean_distance(&cursor))))
-                .min_by_key(|(_, distance)| *distance)
-                .unwrap_or((0, OrderedFloat(f32::INFINITY)));
-            (text.as_str(), closest_char, closest_distance)
+                .map(|(ch, rect)| (*ch, OrderedFloat(rect.euclidean_distance(&cursor)), *rect))
+                .min_by_key(|(_, distance, _)| *distance)
+                .unwrap_or((
+                    0,
+                    OrderedFloat(f32::INFINITY),
+                    Rect::new(Coord::zero(), Coord::zero()),
+                ));
+            (text.as_str(), closest_char, closest_distance, closest_rect)
         })
-        .min_by_key(|(_, _, distance)| *distance)
-        .map(|(a, b, c)| (a.to_string(), b, *c))
+        .min_by_key(|(_, _, distance, _)| *distance)
+        .map(|(a, b, c, d)| (a.to_string(), b, *c, d))
         .unwrap()
 }
 
@@ -101,9 +108,12 @@ pub mod native {
 
 pub type OcrState = Arc<RwLock<LiveOcr>>;
 
-pub fn update_hover(state: &mut LiveOcr, position: (i32, i32)) -> Option<Vec<DictionaryEntry>> {
+pub fn update_hover(
+    state: &mut LiveOcr,
+    position: (i32, i32),
+) -> Option<(Option<Rect<f32>>, Vec<DictionaryEntry>)> {
     let point = geo::point!(x: position.0 as f32, y: position.1 as f32);
-    let (closest_string, closest_char, closest_distance) =
+    let (closest_string, closest_char, closest_distance, closest_rect) =
         find_closest_char(&state.definitions.ocr_strings, point);
 
     if closest_distance < 5.0 {
@@ -115,15 +125,19 @@ pub fn update_hover(state: &mut LiveOcr, position: (i32, i32)) -> Option<Vec<Dic
         state.hovering = Some((closest_string.to_owned(), closest_char));
         let longest_string = longest_meaningful_string(&closest_string, closest_char);
         state.definitions.update(&longest_string);
-        Some(state.definitions.definitions.clone())
-    } else {
+        Some((Some(closest_rect), state.definitions.definitions.clone()))
+    } else if state.hovering.is_some() {
         state.definitions.definitions.clear();
-        Some(Vec::new())
+        state.hovering.take();
+
+        Some((None, Vec::new()))
+    } else {
+        None
     }
 }
 
 pub enum Action {
-    UpdateOcr(Vec<(String, Vec<(usize, Rect<f32>)>)>),
+    UpdateOcr,
     CloseTooltip,
     None,
 }
@@ -140,7 +154,10 @@ pub fn toggle(state: &mut LiveOcr) -> Action {
         } = device_state.get_mouse();
         let monitor = Monitor::from_point(cursor_x, cursor_y).unwrap();
         state.monitor = Some(monitor.clone());
-        Action::UpdateOcr(state.capture_state.clone().capture(monitor))
+        let ocr_state = state.capture_state.clone().capture(monitor);
+        state.definitions.ocr_strings = ocr_state;
+        update_hover(state, device_state.get_mouse().coords);
+        Action::UpdateOcr
     } else {
         state.hovering = None;
         state.monitor = None;
