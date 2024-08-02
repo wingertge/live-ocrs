@@ -34,7 +34,7 @@ pub fn detect_char_boxes(image: &DynamicImage, detection_results: &[OcrResult]) 
             log::info!("Stripped string: {text}");
             let text_len = text.chars().count();
             let removed = line.text.text.chars().count() - text_len;
-            println!("{} is CJK: {}", text, text.trim().chars().all(is_cjk));
+            log::debug!("{} is CJK: {}", text, text.trim().chars().all(is_cjk));
             if text_len == 1 {
                 return Some((
                     text,
@@ -49,6 +49,7 @@ pub fn detect_char_boxes(image: &DynamicImage, detection_results: &[OcrResult]) 
                 rect.width() as u32,
                 rect.height() as u32,
             );
+            let image_height = image.height();
 
             let mut gray_image = threshold(&image.to_luma8(), 128, ThresholdType::Binary);
             if gray_image.get_pixel(0, 0).0 == [255] {
@@ -66,14 +67,7 @@ pub fn detect_char_boxes(image: &DynamicImage, detection_results: &[OcrResult]) 
                     poly.bounding_rect()
                 })
                 .collect::<Vec<_>>();
-            #[cfg(feature = "debug")]
-            {
-                let mut image = DynamicImage::ImageLuma8(gray_image).to_rgb8();
-                for contour in bounds.iter() {
-                    draw_outline_geo(&mut image, *contour, Rgb([255, 0, 0]))
-                }
-                image.save(format!("part_images/subimage{i}.png")).unwrap();
-            }
+
             if bounds.len() < 2 {
                 log::info!("bounds too small");
                 return None;
@@ -82,9 +76,18 @@ pub fn detect_char_boxes(image: &DynamicImage, detection_results: &[OcrResult]) 
             bounds.sort_by_cached_key(|it| OrderedFloat(it.min().x));
 
             if removed > 0 {
-                bounds = remove_overlap(bounds);
+                bounds = remove_overlap(bounds, image_height);
                 log::debug!("New bounds len: {}, Text len: {text_len}", bounds.len());
                 bounds.truncate(bounds.len() - removed);
+            }
+
+            #[cfg(feature = "debug")]
+            {
+                let mut image = DynamicImage::ImageLuma8(gray_image).to_rgb8();
+                for contour in bounds.iter() {
+                    draw_outline_geo(&mut image, *contour, Rgb([255, 0, 0]))
+                }
+                image.save(format!("part_images/subimage{i}.png")).unwrap();
             }
 
             let mut character_width = find_character_width(&bounds);
@@ -132,7 +135,6 @@ pub fn detect_char_boxes(image: &DynamicImage, detection_results: &[OcrResult]) 
         })
         .collect()
 }
-
 
 fn find_line_bounds(bounds: &[Rect<f32>], char_width: f32) -> Rect<f32> {
     let min_y = *bounds
@@ -210,11 +212,15 @@ fn strip_punctuation(text: &str) -> String {
     text.chars().rev().collect()
 }
 
-fn remove_overlap(bounds: Vec<Rect<f32>>) -> Vec<Rect<f32>> {
+fn remove_overlap(bounds: Vec<Rect<f32>>, height: u32) -> Vec<Rect<f32>> {
     let mut new_bounds: Vec<Rect<f32>> = Vec::with_capacity(bounds.len());
     for bound in bounds {
-        if let Some(other) = new_bounds.iter().find(|it| it.intersects(&bound)) {
-            new_bounds.push(merge_rects(bound, *other));
+        let bound = Rect::new(
+            coord![x: bound.min().x, y: 0.0],
+            coord![x: bound.max().x, y: height as f32],
+        );
+        if let Some(other) = new_bounds.iter_mut().find(|it| it.intersects(&bound)) {
+            *other = merge_rects(bound, *other);
         } else {
             new_bounds.push(bound);
         }

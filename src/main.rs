@@ -1,4 +1,4 @@
-use iced::{Application, Font, Settings, Size};
+use iced::{multi_window::Application, Font, Settings, Size};
 use iced_winit::core::window;
 use live_ocrs::app::LiveOcr;
 use tracing_subscriber::{fmt::format::FmtSpan, EnvFilter};

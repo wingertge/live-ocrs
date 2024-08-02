@@ -7,14 +7,6 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-*.png
-models
-part_images
-data
-lib
-target
-
-
 node_modules
 dist
 dist-ssr
