@@ -62,7 +62,7 @@ fn main() {
                 if let Err(err) = &state {
                     log::error!("{err}");
                     app.exit(-1);
-                } */
+                }
                 let state = state.unwrap();
                 app.manage(state.clone());
 
