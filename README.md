@@ -1,7 +1,14 @@
 # Live OCR
 Live OCR and character definitions on mouseover. Extremely WIP.
 
-Press LAlt + X to toggle, OCR is done once when toggling on.
+Press `Alt + X` to toggle, OCR is done once when toggling on. Click on paragraphs in the application window to copy them to your clipboard (i.e. to paste into a translator).
+
+**Needs to be launched as admin to work in applications that also launch as admin (i.e. ZZZ).**
+
+### Example Screenshots
+| Tooltip | App Window |
+| --- | --- |
+| ![Screenshot of the hover over tooltip](/assets/example1.webp) | ![Screenshot of the application window allowing copying of entire paragraphs](/assets/example2.webp) |
 
 # Support for non-Windows OS
 This application should work on Linux/MacOS out of the box, but is not tested. Feel free to build from source.
