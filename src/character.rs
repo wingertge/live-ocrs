@@ -12,6 +12,7 @@ use rapidocr::OcrResult;
 use unicode_blocks::{
     find_unicode_block, is_cjk, CJK_SYMBOLS_AND_PUNCTUATION, HALFWIDTH_AND_FULLWIDTH_FORMS,
 };
+use xcap::Monitor;
 
 #[cfg(feature = "debug")]
 use crate::draw_outline_geo;
@@ -21,7 +22,11 @@ pub type Character = (usize, Rect<f32>);
 pub type Characters = Vec<Character>;
 pub type Block = (String, Characters);
 
-pub fn detect_char_boxes(image: &DynamicImage, detection_results: &[OcrResult]) -> Vec<Block> {
+pub fn detect_char_boxes(
+    image: &DynamicImage,
+    detection_results: &[OcrResult],
+    monitor: &Monitor,
+) -> Vec<Block> {
     detection_results
         .iter()
         .enumerate()
@@ -127,7 +132,8 @@ pub fn detect_char_boxes(image: &DynamicImage, detection_results: &[OcrResult]) 
                                 coord![x: min_x, y: line_rect.min().y],
                                 coord![x: max_x, y: line_rect.max().y],
                             )
-                            .translate(rect.min().x, rect.min().y),
+                            .translate(rect.min().x, rect.min().y)
+                            .translate(monitor.x() as f32, monitor.y() as f32),
                         )
                     })
                     .collect(),

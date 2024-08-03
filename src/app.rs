@@ -1,6 +1,7 @@
 use std::{any::TypeId, env, sync::Arc};
 
 use device_query::{DeviceEvents as _, DeviceQuery, DeviceState, Keycode, MouseState};
+use geo::Rect;
 use iced::{
     futures::SinkExt,
     multi_window::Application,
@@ -22,7 +23,7 @@ pub struct LiveOcr {
     pub capture_state: Arc<CaptureState>,
     pub enabled: bool,
     pub definitions: Definitions,
-    pub hovering: Option<(String, usize)>,
+    pub hovering: Option<(String, usize, Rect<f32>)>,
     pub monitor: Option<Monitor>,
     pub tooltip_window: Option<(window::Id, f32)>,
 }
@@ -111,7 +112,7 @@ impl Application for LiveOcr {
                     self.monitor = Some(monitor.clone());
                     let capture = self.capture_state.clone();
                     Command::perform(
-                        spawn_blocking(move || capture.capture(monitor)),
+                        spawn_blocking(move || capture.capture(&monitor)),
                         |ocr_state| OcrMessage::OcrChanged(ocr_state.unwrap()),
                     )
                 } else {
@@ -130,15 +131,16 @@ impl Application for LiveOcr {
             OcrMessage::CursorMoved(position) => {
                 if self.enabled && !self.definitions.ocr_strings.is_empty() {
                     let point = geo::point!(x: position.x, y: position.y);
-                    let (closest_string, closest_char, closest_distance, _) =
+                    let (closest_string, closest_char, closest_distance, closest_rect) =
                         find_closest_char(&self.definitions.ocr_strings, point);
                     if closest_distance < 5.0 {
-                        if let Some((prev_str, prev_char)) = &self.hovering {
+                        if let Some((prev_str, prev_char, _)) = &self.hovering {
                             if &closest_string == prev_str && closest_char == *prev_char {
                                 return Command::none();
                             }
                         }
-                        self.hovering = Some((closest_string.to_owned(), closest_char));
+                        self.hovering =
+                            Some((closest_string.to_owned(), closest_char, closest_rect));
                         let longest_string =
                             longest_meaningful_string(&closest_string, closest_char);
                         self.definitions.update(&longest_string);

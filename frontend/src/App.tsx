@@ -1,5 +1,7 @@
+import { createElementSize } from "@solid-primitives/resize-observer";
+import { invoke } from "@tauri-apps/api";
 import { listen } from "@tauri-apps/api/event";
-import { createResource, createSignal, For } from "solid-js";
+import { createEffect, createResource, createSignal, For } from "solid-js";
 
 type Definition = {
     simplified: string;
@@ -65,13 +67,21 @@ function App() {
     createResource(
         async () =>
             await listen("definitions-changed", (event) => {
-                console.log(event.payload);
+                //console.log(event.payload);
                 setDefinitions(event.payload as Definition[]);
             })
     );
+    const size = createElementSize(document.getElementById("root")!);
+    createEffect(() => {
+        console.log({ width: size.width, height: size.height });
+        invoke("content_size_changed", {
+            width: size.width,
+            height: size.height,
+        });
+    });
 
     return (
-        <div class="p-8">
+        <div class="px-4 pt-2 border-slate-700 border-2">
             <For each={definitions()}>
                 {(definition, _) => <Definition definition={definition} />}
             </For>
@@ -92,10 +102,10 @@ function Definition(props: { definition: Definition }) {
                     )}
                 </For>
             </div>
-            <div class="flex flex-row divide-x -ml-2 flex-wrap">
+            <div class="flex flex-col divide-y">
                 <For each={props.definition.translations}>
                     {(translation, _) => (
-                        <p class="px-2 font-light">{translation}</p>
+                        <p class="py-1 font-light text-nowrap">{translation}</p>
                     )}
                 </For>
             </div>

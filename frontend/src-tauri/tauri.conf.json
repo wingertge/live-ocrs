@@ -14,11 +14,15 @@
       "all": false,
       "globalShortcut": {
         "all": true
+      },
+      "window": {
+        "setSize": true,
+        "show": true
       }
     },
     "bundle": {
-      "active": true,
-      "category": "DeveloperTool",
+      "active": false,
+      "category": "Education",
       "copyright": "",
       "deb": {
         "depends": []
@@ -40,7 +44,11 @@
         "providerShortName": null,
         "signingIdentity": null
       },
-      "resources": [],
+      "resources": {
+        "../../models": "models",
+        "../../data": "data",
+        "../../lib": "."
+      },
       "shortDescription": "",
       "targets": "all",
       "windows": {
@@ -61,7 +69,17 @@
         "height": 600,
         "resizable": true,
         "title": "LiveOCR",
-        "width": 800
+        "width": 800,
+        "label": "main",
+        "visible": false
+      },
+      {
+        "width": 400,
+        "height": 200,
+        "decorations": false,
+        "center": true,
+        "url": "splashscreen.html",
+        "label": "splashscreen"
       }
     ]
   }

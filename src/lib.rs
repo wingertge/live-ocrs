@@ -117,12 +117,12 @@ pub fn update_hover(
         find_closest_char(&state.definitions.ocr_strings, point);
 
     if closest_distance < 5.0 {
-        if let Some((prev_str, prev_char)) = &state.hovering {
+        if let Some((prev_str, prev_char, _)) = &state.hovering {
             if &closest_string == prev_str && closest_char == *prev_char {
                 return None;
             }
         }
-        state.hovering = Some((closest_string.to_owned(), closest_char));
+        state.hovering = Some((closest_string.to_owned(), closest_char, closest_rect));
         let longest_string = longest_meaningful_string(&closest_string, closest_char);
         state.definitions.update(&longest_string);
         Some((Some(closest_rect), state.definitions.definitions.clone()))
@@ -153,8 +153,8 @@ pub fn toggle(state: &mut LiveOcr) -> Action {
             ..
         } = device_state.get_mouse();
         let monitor = Monitor::from_point(cursor_x, cursor_y).unwrap();
-        state.monitor = Some(monitor.clone());
-        let ocr_state = state.capture_state.clone().capture(monitor);
+        let ocr_state = state.capture_state.clone().capture(&monitor);
+        state.monitor = Some(monitor);
         state.definitions.ocr_strings = ocr_state;
         update_hover(state, device_state.get_mouse().coords);
         Action::UpdateOcr
