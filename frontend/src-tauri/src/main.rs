@@ -59,7 +59,7 @@ fn main() {
             let app = app.handle();
             spawn_blocking(move || {
                 let state = init_state(app.clone());
-                /*                 if let Err(err) = &state {
+                if let Err(err) = &state {
                     log::error!("{err}");
                     app.exit(-1);
                 } */
