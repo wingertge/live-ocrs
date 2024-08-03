@@ -3011,6 +3011,7 @@ dependencies = [
 [[package]]
 name = "rapidocr"
 version = "0.1.0"
+source = "git+https://github.com/wingertge/rapidoc-rs#8167e432416241652d839d69efcdadcf9039008a"
 dependencies = [
  "float-ord",
  "geo",

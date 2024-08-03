@@ -17,7 +17,7 @@ itertools = "0.13"
 log = "0.4"
 ordered-float = "4.2"
 parking_lot = "0.12"
-rapidocr = { path = "../rapidoc-rs", features = ["tensorrt"] }
+rapidocr = { workspace = true }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_repr = "0.1"
@@ -35,6 +35,10 @@ debug = []
 [workspace]
 members = [".", "frontend/src-tauri"]
 resolver = "2"
+
+[workspace.dependencies.rapidocr]
+features = ["tensorrt"]
+git = "https://github.com/wingertge/rapidoc-rs"
 
 [profile.dev.package."*"]
 opt-level = 3
