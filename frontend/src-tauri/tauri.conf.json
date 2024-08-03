@@ -21,7 +21,7 @@
       }
     },
     "bundle": {
-      "active": false,
+      "active": true,
       "category": "Education",
       "copyright": "",
       "deb": {
@@ -54,7 +54,14 @@
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
-        "timestampUrl": ""
+        "timestampUrl": "",
+        "webviewInstallMode": {
+          "silent": true,
+          "type": "embedBootstrapper"
+        },
+        "wix": {
+          "template": "installer.wxs"
+        }
       }
     },
     "security": {

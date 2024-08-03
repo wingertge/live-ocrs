@@ -11,6 +11,7 @@ lerna-debug.log*
 part_images
 **/.cache
 lib
+lib_nogpu
 target
 
 
