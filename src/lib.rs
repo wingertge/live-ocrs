@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use app::LiveOcr;
+use capture::CaptureState;
 use character::Block;
 use device_query::{DeviceQuery as _, DeviceState, MouseState};
-use dict::DictionaryEntry;
+use dict::{Dictionary, DictionaryEntry};
 use geo::{Coord, EuclideanDistance as _, LineString, Polygon, Rect};
 use image::{Rgb, RgbImage};
 use imageproc::point::Point;
@@ -12,11 +12,37 @@ use parking_lot::RwLock;
 use unicode_blocks::{is_cjk, CJK_SYMBOLS_AND_PUNCTUATION, HALFWIDTH_AND_FULLWIDTH_FORMS};
 use xcap::Monitor;
 
-pub mod app;
 pub mod capture;
 pub mod character;
 pub mod dict;
-pub mod view;
+
+pub struct Definitions {
+    pub dict: Dictionary,
+    pub ocr_strings: Vec<Block>,
+    pub definitions: Vec<DictionaryEntry>,
+}
+
+impl Definitions {
+    pub fn new(dict: Dictionary) -> Self {
+        Self {
+            dict,
+            ocr_strings: Vec::new(),
+            definitions: Vec::new(),
+        }
+    }
+
+    pub fn update(&mut self, text: &str) {
+        self.definitions = self.dict.matches(text);
+    }
+}
+
+pub struct LiveOcr {
+    pub capture_state: Arc<CaptureState>,
+    pub enabled: bool,
+    pub definitions: Definitions,
+    pub hovering: Option<(String, usize, Rect<f32>)>,
+    pub monitor: Option<Monitor>,
+}
 
 pub fn to_geo_poly(points: &[Point<i32>]) -> Polygon<f32> {
     let points = points
@@ -78,32 +104,6 @@ pub fn find_closest_char(
         .min_by_key(|(_, _, distance, _)| *distance)
         .map(|(a, b, c, d)| (a.to_string(), b, *c, d))
         .unwrap()
-}
-
-pub mod native {
-    use std::ffi::c_void;
-
-    use windows::Win32::{
-        Graphics::Gdi::HMONITOR,
-        UI::HiDpi::{GetDpiForMonitor, MDT_EFFECTIVE_DPI},
-    };
-    use xcap::Monitor;
-
-    pub fn get_scale_factor(monitor: &Monitor) -> f32 {
-        let inner = HMONITOR(monitor.id() as *mut c_void);
-        get_scale_factor_raw(inner)
-    }
-
-    pub fn get_scale_factor_raw(handle: HMONITOR) -> f32 {
-        let mut dpi_x = 0;
-        let mut dpi_y = 0;
-        unsafe { GetDpiForMonitor(handle, MDT_EFFECTIVE_DPI, &mut dpi_x, &mut dpi_y) }.unwrap();
-        log::info!("DPI: {dpi_x}x{dpi_y}");
-        let factor = (dpi_y as f32) / 96.0;
-        log::info!("Scale factor: {factor}");
-
-        factor
-    }
 }
 
 pub type OcrState = Arc<RwLock<LiveOcr>>;

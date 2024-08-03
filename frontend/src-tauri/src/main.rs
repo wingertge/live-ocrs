@@ -12,7 +12,7 @@ use std::{
 
 use device_query::{DeviceEvents as _, DeviceState};
 use live_ocrs::{
-    app::LiveOcr, capture::CaptureState, dict, toggle, update_hover, view::Definitions, OcrState,
+    capture::CaptureState, dict, toggle, update_hover, Definitions, LiveOcr, OcrState,
 };
 use parking_lot::RwLock;
 use rapidocr::{ExecutionProvider, RapidOCRBuilder};
@@ -230,7 +230,6 @@ fn init_state(app: AppHandle) -> Result<OcrState, Box<dyn Error>> {
         hovering: None,
         definitions: Definitions::new(dict::load(dict_path, cache_dir.join("dict"))),
         monitor: None,
-        tooltip_window: None,
     };
     Ok(Arc::new(RwLock::new(state)))
 }
