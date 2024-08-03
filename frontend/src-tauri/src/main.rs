@@ -148,7 +148,13 @@ async fn content_size_changed(
 }
 
 fn handle_toggle(handle: AppHandle, state: OcrState) {
-    tauri::async_runtime::spawn_blocking(move || {
+    spawn_blocking(move || {
+        let ui_state = if state.read().enabled {
+            "disabled"
+        } else {
+            "detecting"
+        };
+        handle.emit_to("main", "state-changed", ui_state).unwrap();
         let action = {
             let mut state = state.write();
             toggle(state.borrow_mut())
@@ -156,9 +162,17 @@ fn handle_toggle(handle: AppHandle, state: OcrState) {
 
         match action {
             live_ocrs::Action::UpdateOcr => {
+                let strings: Vec<String> = state
+                    .read()
+                    .definitions
+                    .ocr_strings
+                    .iter()
+                    .map(|it| it.0.clone())
+                    .collect();
+                handle.emit_to("main", "ocr-changed", strings).unwrap();
                 let definitions = state.read().definitions.definitions.clone();
                 let window =
-                    WindowBuilder::new(&handle, "tooltip", WindowUrl::App("index.html".into()))
+                    WindowBuilder::new(&handle, "tooltip", WindowUrl::App("tooltip.html".into()))
                         .always_on_top(true)
                         .decorations(false)
                         .focused(false)
@@ -166,9 +180,15 @@ fn handle_toggle(handle: AppHandle, state: OcrState) {
                         .build()
                         .unwrap();
                 window.set_ignore_cursor_events(true).unwrap();
-                handle.emit_all("definitions-changed", definitions).unwrap();
+                handle
+                    .emit_to("tooltip", "definitions-changed", definitions)
+                    .unwrap();
+                handle.emit_to("main", "state-changed", "enabled").unwrap();
             }
             live_ocrs::Action::CloseTooltip => {
+                handle
+                    .emit_to("main", "ocr-changed", Vec::<String>::new())
+                    .unwrap();
                 if let Some(window) = handle.get_window("tooltip") {
                     window.close().unwrap();
                 }
@@ -253,7 +273,8 @@ async fn track_cursor(state: OcrState, app: AppHandle) {
                     } */
                 }
 
-                app.emit_all("definitions-changed", definitions).unwrap();
+                app.emit_to("tooltip", "definitions-changed", definitions)
+                    .unwrap();
             }
         }
     }

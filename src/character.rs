@@ -119,7 +119,7 @@ pub fn detect_char_boxes(
             log::info!("Detected character spacing: {letter_spacing}");
 
             Some((
-                text.clone(),
+                line.text.text.clone(),
                 text.chars()
                     .enumerate()
                     .map(|(i, _)| {
